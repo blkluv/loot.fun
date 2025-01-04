@@ -1,4 +1,4 @@
-// Highly advanced version of cryptocurrency-based loot box and mini-games with animations and integrated images
+// Highly advanced version of cryptocurrency-based loot box and mini-games with integrated images and enhanced complexity
 
 // Required libraries
 const express = require('express');
@@ -29,6 +29,8 @@ const rewardPool = [
     { type: 'nothing', message: 'Better luck next time!' }
 ];
 
+const userStats = {}; // Track user progress and rewards
+
 // Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views/index.html'));
@@ -37,14 +39,31 @@ app.get('/', (req, res) => {
 // API endpoint for loot box opening
 app.post('/open-loot-box', async (req, res) => {
     const reward = rewardPool[randomInt(0, rewardPool.length)];
-    res.json({ success: true, reward });
+    const username = req.body.username;
+
+    if (!userStats[username]) {
+        userStats[username] = { lootOpened: 0, rewards: [] };
+    }
+
+    userStats[username].lootOpened++;
+    userStats[username].rewards.push(reward);
+
+    res.json({ success: true, reward, stats: userStats[username] });
 });
 
 // API endpoint for dice game
 app.post('/roll-dice', async (req, res) => {
     const roll = randomInt(1, 7);
+    const username = req.body.username;
+
+    if (!userStats[username]) {
+        return res.status(400).json({ success: false, message: 'User not found' });
+    }
+
     const reward = roll > 4 ? { success: true, reward: roll * 0.2, message: 'You won SOL!' } : { success: false, message: 'Try again!' };
-    res.json(reward);
+    if (reward.success) userStats[username].rewards.push(reward);
+
+    res.json({ ...reward, stats: userStats[username] });
 });
 
 // API endpoint for spinning wheel
@@ -56,8 +75,16 @@ app.post('/spin-wheel', async (req, res) => {
         { prize: 'No prize, try again' },
         { prize: 'Golden Loot Chest' }
     ];
+    const username = req.body.username;
+
+    if (!userStats[username]) {
+        return res.status(400).json({ success: false, message: 'User not found' });
+    }
+
     const result = outcomes[randomInt(0, outcomes.length)];
-    res.json({ success: true, result });
+    userStats[username].rewards.push(result);
+
+    res.json({ success: true, result, stats: userStats[username] });
 });
 
 // Extended static resources
@@ -74,10 +101,15 @@ const lootBoxHTML = `
 <body>
     <header>
         <h1>LootSol: Explore the Blockchain Magic</h1>
+        <form id="user-form">
+            <label for="username">Enter your name:</label>
+            <input type="text" id="username" name="username" required>
+            <button type="submit">Start</button>
+        </form>
     </header>
-    <main id="game-container">
+    <main id="game-container" style="display: none;">
         <section id="loot-box-section">
-            <h2>Open Your Magical Loot Box</h2>
+            <h2>Choose Your Loot Box</h2>
             <img src="/images/loot-box.png" alt="Loot Box" class="animated-box">
             <button id="open-loot" class="action-button">Open Loot Box</button>
         </section>
@@ -89,6 +121,11 @@ const lootBoxHTML = `
                 <button id="spin-wheel" class="action-button">Spin the Wheel</button>
                 <button id="treasure-hunt" class="action-button">Treasure Hunt</button>
             </div>
+        </section>
+
+        <section id="stats-display">
+            <h2>Your Stats</h2>
+            <div id="stats-output"></div>
         </section>
 
         <section id="result-display">
@@ -107,22 +144,49 @@ const lootBoxHTML = `
             output.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
         };
 
+        const displayStats = (stats) => {
+            const output = document.getElementById('stats-output');
+            output.innerHTML = `<pre>${JSON.stringify(stats, null, 2)}</pre>`;
+        };
+
+        document.getElementById('user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('user-form').style.display = 'none';
+            window.username = document.getElementById('username').value;
+        });
+
         document.getElementById('open-loot').addEventListener('click', async () => {
-            const response = await fetch('/open-loot-box', { method: 'POST' });
+            const response = await fetch('/open-loot-box', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: window.username })
+            });
             const data = await response.json();
             displayResult(data.reward);
+            displayStats(data.stats);
         });
 
         document.getElementById('play-dice').addEventListener('click', async () => {
-            const response = await fetch('/roll-dice', { method: 'POST' });
+            const response = await fetch('/roll-dice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: window.username })
+            });
             const data = await response.json();
             displayResult(data);
+            displayStats(data.stats);
         });
 
         document.getElementById('spin-wheel').addEventListener('click', async () => {
-            const response = await fetch('/spin-wheel', { method: 'POST' });
+            const response = await fetch('/spin-wheel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: window.username })
+            });
             const data = await response.json();
             displayResult(data.result);
+            displayStats(data.stats);
         });
 
         document.getElementById('treasure-hunt').addEventListener('click', () => {
@@ -148,9 +212,8 @@ app.listen(port, () => {
 });
 
 /* Enhancements:
- * - Added "Treasure Hunt" mini-game with animations
- * - Integrated image assets for all sections
- * - Dynamic animations for treasure discovery
- * - Advanced reward logic with rare items
- * - Extended UI for multiple games
+ * - Added user tracking for loot box openings and rewards
+ * - Integrated persistent stats display for each user
+ * - More complex animations and treasure hunt logic
+ * - Advanced reward and mini-game interactions
  */
