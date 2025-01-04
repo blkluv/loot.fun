@@ -1,1 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loot.fun - Unlock Rewards</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #1e1e2f, #2a2a3d);
+            color: #fff;
+            text-align: center;
+        }
+
+        header {
+            padding: 20px;
+            background-color: #15151e;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header img {
+            height: 50px;
+        }
+
+        nav {
+            margin-top: 10px;
+        }
+
+        nav a {
+            color: #00d1ff;
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        section {
+            padding: 50px;
+        }
+
+        .hero {
+            padding: 100px 20px;
+            background: linear-gradient(45deg, #2a2a3d, #1e1e2f);
+        }
+
+        .hero h1 {
+            font-size: 3em;
+            margin: 0 0 20px;
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            margin: 0 0 30px;
+        }
+
+        .cta {
+            padding: 15px 30px;
+            background-color: #00d1ff;
+            color: #1e1e2f;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .cta:hover {
+            background-color: #00b5e0;
+        }
+
+        footer {
+            background-color: #15151e;
+            padding: 20px;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .game-container {
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        canvas {
+            border: 2px solid #fff;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="logo-placeholder.png" alt="Loot.fun Logo">
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#game">Game</a>
+            <a href="#rewards">Rewards</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+
+    <section id="home" class="hero">
+        <h1>Welcome to Loot.fun</h1>
+        <p>Unlock loot boxes, win rare NFTs, and earn rewards with $LOOT tokens on the Solana blockchain.</p>
+        <button class="cta">Start Now</button>
+    </section>
+
+    <section id="game">
+        <h2>Play and Earn</h2>
+        <p>Try out our interactive mini-game to win $LOOT rewards and collectibles!</p>
+        <div class="game-container">
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+        </div>
+    </section>
+
+    <section id="rewards">
+        <h2>Rewards</h2>
+        <p>Explore exciting prizes including:</p>
+        <ul>
+            <li>Common NFTs</li>
+            <li>Rare NFTs</li>
+            <li>Exclusive $LOOT tokens</li>
+            <li>Epic Collectibles</li>
+        </ul>
+    </section>
+
+    <section id="faq">
+        <h2>FAQ</h2>
+        <p><strong>What is Loot.fun?</strong><br>
+        Loot.fun is your gateway to mystery boxes, NFT rewards, and interactive games powered by $LOOT tokens on the Solana blockchain.</p>
+        <p><strong>How do I start?</strong><br>
+        Buy $LOOT tokens, play games, and open loot boxes to win amazing rewards.</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Loot.fun. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let score = 0;
+
+        const player = {
+            x: 200,
+            y: 200,
+            size: 20,
+            color: 'yellow',
+            dx: 0,
+            dy: 0
+        };
+
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            requestAnimationFrame(updateGame);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') player.dy = -2;
+            if (e.key === 'ArrowDown') player.dy = 2;
+            if (e.key === 'ArrowLeft') player.dx = -2;
+            if (e.key === 'ArrowRight') player.dx = 2;
+        });
+
+        document.addEventListener('keyup', () => {
+            player.dx = 0;
+            player.dy = 0;
+        });
+
+        updateGame();
+    </script>
+</body>
+</html>
 
