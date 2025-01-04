@@ -3,186 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loot.fun - Unlock Rewards</title>
+    <title>Crypto Adventure Game</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             background: linear-gradient(45deg, #1e1e2f, #2a2a3d);
             color: #fff;
-            text-align: center;
+            overflow: hidden;
         }
 
-        header {
-            padding: 20px;
-            background-color: #15151e;
-            position: sticky;
+        #walletModal {
+            position: fixed;
             top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             z-index: 10;
         }
 
-        header img {
-            height: 50px;
+        #walletModal input {
+            font-size: 16px;
+            padding: 10px;
+            width: 300px;
+            margin-right: 10px;
         }
 
-        nav {
-            margin-top: 10px;
-        }
-
-        nav a {
-            color: #00d1ff;
-            margin: 0 15px;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        nav a:hover {
-            text-decoration: underline;
-        }
-
-        section {
-            padding: 50px;
-        }
-
-        .hero {
-            padding: 100px 20px;
-            background: linear-gradient(45deg, #2a2a3d, #1e1e2f);
-        }
-
-        .hero h1 {
-            font-size: 3em;
-            margin: 0 0 20px;
-        }
-
-        .hero p {
-            font-size: 1.2em;
-            margin: 0 0 30px;
-        }
-
-        .cta {
-            padding: 15px 30px;
+        #walletModal button {
+            padding: 10px 20px;
             background-color: #00d1ff;
             color: #1e1e2f;
-            font-size: 18px;
-            font-weight: bold;
             border: none;
-            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        .cta:hover {
-            background-color: #00b5e0;
+        #gameCanvas {
+            display: block;
+            margin: auto;
+            background: black;
+            border: 2px solid white;
         }
 
-        footer {
-            background-color: #15151e;
-            padding: 20px;
-            color: #ccc;
-            font-size: 14px;
+        #score {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
         }
 
-        .game-container {
-            margin: 50px auto;
-            text-align: center;
+        .popup {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #15151e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            animation: fadeInOut 5s linear;
         }
 
-        canvas {
-            border: 2px solid #fff;
-            margin-top: 20px;
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <img src="logo-placeholder.png" alt="Loot.fun Logo">
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#game">Game</a>
-            <a href="#rewards">Rewards</a>
-            <a href="#faq">FAQ</a>
-            <a href="#contact">Contact</a>
-        </nav>
-    </header>
 
-    <section id="home" class="hero">
-        <h1>Welcome to Loot.fun</h1>
-        <p>Unlock loot boxes, win rare NFTs, and earn rewards with $LOOT tokens on the Solana blockchain.</p>
-        <button class="cta">Start Now</button>
-    </section>
+<div id="walletModal">
+    <div>
+        <p>Connect Your Solana Wallet to Play</p>
+        <input type="text" id="walletAddress" placeholder="Enter your Solana wallet address">
+        <button id="connectWallet">Connect</button>
+    </div>
+</div>
 
-    <section id="game">
-        <h2>Play and Earn</h2>
-        <p>Try out our interactive mini-game to win $LOOT rewards and collectibles!</p>
-        <div class="game-container">
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
-        </div>
-    </section>
+<div id="score">Score: 0</div>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <section id="rewards">
-        <h2>Rewards</h2>
-        <p>Explore exciting prizes including:</p>
-        <ul>
-            <li>Common NFTs</li>
-            <li>Rare NFTs</li>
-            <li>Exclusive $LOOT tokens</li>
-            <li>Epic Collectibles</li>
-        </ul>
-    </section>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    <section id="faq">
-        <h2>FAQ</h2>
-        <p><strong>What is Loot.fun?</strong><br>
-        Loot.fun is your gateway to mystery boxes, NFT rewards, and interactive games powered by $LOOT tokens on the Solana blockchain.</p>
-        <p><strong>How do I start?</strong><br>
-        Buy $LOOT tokens, play games, and open loot boxes to win amazing rewards.</p>
-    </section>
+    let score = 0;
+    let player = { x: 400, y: 300, size: 20, color: 'yellow', dx: 0, dy: 0 };
+    let coins = [];
+    let ghosts = [];
 
-    <footer>
-        <p>&copy; 2025 Loot.fun. All Rights Reserved.</p>
-    </footer>
+    const walletModal = document.getElementById('walletModal');
+    const walletAddressInput = document.getElementById('walletAddress');
+    const connectWalletButton = document.getElementById('connectWallet');
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    connectWalletButton.addEventListener('click', () => {
+        const walletAddress = walletAddressInput.value.trim();
+        if (!walletAddress) {
+            alert('Please enter a valid Solana wallet address.');
+            return;
+        }
+        walletModal.style.display = 'none';
+        initGame();
+    });
 
-        let score = 0;
+    function initGame() {
+        // Generate coins
+        for (let i = 0; i < 5; i++) {
+            coins.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: 10,
+                color: 'gold'
+            });
+        }
 
-        const player = {
-            x: 200,
-            y: 200,
-            size: 20,
-            color: 'yellow',
-            dx: 0,
-            dy: 0
-        };
+        // Generate ghosts
+        for (let i = 0; i < 3; i++) {
+            ghosts.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: 20,
+                color: 'red',
+                dx: Math.random() < 0.5 ? 2 : -2,
+                dy: Math.random() < 0.5 ? 2 : -2
+            });
+        }
 
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
+        requestAnimationFrame(updateGame);
+    }
+
+    function drawPlayer() {
+        ctx.fillStyle = player.color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawCoins() {
+        coins.forEach(coin => {
+            ctx.fillStyle = coin.color;
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.arc(coin.x, coin.y, coin.size, 0, Math.PI * 2);
             ctx.fill();
-        }
+        });
+    }
 
-        function updateGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPlayer();
-            requestAnimationFrame(updateGame);
-        }
+    function drawGhosts() {
+        ghosts.forEach(ghost => {
+            ctx.fillStyle = ghost.color;
+            ctx.beginPath();
+            ctx.arc(ghost.x, ghost.y, ghost.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp') player.dy = -2;
-            if (e.key === 'ArrowDown') player.dy = 2;
-            if (e.key === 'ArrowLeft') player.dx = -2;
-            if (e.key === 'ArrowRight') player.dx = 2;
+    function updatePlayer() {
+        player.x += player.dx;
+        player.y += player.dy;
+
+        // Keep player within bounds
+        if (player.x - player.size < 0) player.x = player.size;
+        if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+        if (player.y - player.size < 0) player.y = player.size;
+        if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
+    }
+
+    function updateGhosts() {
+        ghosts.forEach(ghost => {
+            ghost.x += ghost.dx;
+            ghost.y += ghost.dy;
+
+            // Bounce off walls
+            if (ghost.x - ghost.size < 0 || ghost.x + ghost.size > canvas.width) ghost.dx *= -1;
+            if (ghost.y - ghost.size < 0 || ghost.y + ghost.size > canvas.height) ghost.dy *= -1;
+        });
+    }
+
+    function detectCollisions() {
+        coins = coins.filter(coin => {
+            const dist = Math.hypot(player.x - coin.x, player.y - coin.y);
+            if (dist < player.size + coin.size) {
+                score++;
+                document.getElementById('score').innerText = `Score: ${score}`;
+                showPopup('+1 Coin!');
+                return false;
+            }
+            return true;
         });
 
-        document.addEventListener('keyup', () => {
-            player.dx = 0;
-            player.dy = 0;
+        ghosts.forEach(ghost => {
+            const dist = Math.hypot(player.x - ghost.x, player.y - ghost.y);
+            if (dist < player.size + ghost.size) {
+                alert(`Game Over! Final Score: ${score}`);
+                window.location.reload();
+            }
         });
+    }
 
-        updateGame();
-    </script>
+    function showPopup(message) {
+        const popup = document.createElement('div');
+        popup.className = 'popup';
+        popup.textContent = message;
+        document.body.appendChild(popup);
+
+        setTimeout(() => popup.remove(), 5000);
+    }
+
+    function updateGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        updatePlayer();
+        updateGhosts();
+        detectCollisions();
+
+        drawPlayer();
+        drawCoins();
+        drawGhosts();
+
+        requestAnimationFrame(updateGame);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') player.dy = -3;
+        if (e.key === 'ArrowDown') player.dy = 3;
+        if (e.key === 'ArrowLeft') player.dx = -3;
+        if (e.key === 'ArrowRight') player.dx = 3;
+    });
+
+    document.addEventListener('keyup', () => {
+        player.dx = 0;
+        player.dy = 0;
+    });
+</script>
+
 </body>
 </html>
-
