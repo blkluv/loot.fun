@@ -3,246 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Adventure Game</title>
+    <title>Loot Box Game</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(45deg, #1e1e2f, #2a2a3d);
-            color: #fff;
+            background: url('file-4xLDZ4MFMCSWwzjoFPzrAK') no-repeat center center fixed;
+            background-size: cover;
             overflow: hidden;
         }
 
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
         #walletModal {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
             z-index: 10;
         }
 
         #walletModal input {
-            font-size: 16px;
             padding: 10px;
-            width: 300px;
-            margin-right: 10px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
         }
 
         #walletModal button {
             padding: 10px 20px;
-            background-color: #00d1ff;
-            color: #1e1e2f;
-            border: none;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        #gameCanvas {
-            display: block;
-            margin: auto;
-            background: black;
-            border: 2px solid white;
-        }
-
-        #score {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            font-size: 20px;
-        }
-
-        .popup {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #15151e;
-            color: #fff;
-            padding: 15px;
-            border-radius: 10px;
             font-size: 18px;
-            animation: fadeInOut 5s linear;
+            font-weight: bold;
+            color: #fff;
+            background-color: #00d1ff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
         }
 
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
         }
+
+        .loot-box {
+            width: 200px;
+            height: 200px;
+            background: url('file-Ky3hguNvJnzs87azrXAeKm') no-repeat center;
+            background-size: contain;
+            margin: 20px;
+            position: relative;
+            cursor: pointer;
+            animation: float 3s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        #rewardDisplay {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            z-index: 20;
+        }
+
+        #rewardDisplay img {
+            max-width: 150px;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 <body>
-
 <div id="walletModal">
-    <div>
-        <p>Connect Your Solana Wallet to Play</p>
-        <input type="text" id="walletAddress" placeholder="Enter your Solana wallet address">
-        <button id="connectWallet">Connect</button>
-    </div>
+    <h1>Connect Your Wallet</h1>
+    <input type="text" id="walletInput" placeholder="Enter your Solana wallet address">
+    <button id="connectWallet">Connect</button>
 </div>
 
-<div id="score">Score: 0</div>
-<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="gameContainer">
+    <h1 style="color: white;">Open Your Loot Box</h1>
+    <div class="loot-box" id="lootBox1"></div>
+    <div class="loot-box" id="lootBox2"></div>
+    <div class="loot-box" id="lootBox3"></div>
+</div>
+
+<div id="rewardDisplay">
+    <h2>Congratulations!</h2>
+    <p>You won an NFT!</p>
+    <img id="rewardImage" src="" alt="NFT">
+</div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    let score = 0;
-    let player = { x: 400, y: 300, size: 20, color: 'yellow', dx: 0, dy: 0 };
-    let coins = [];
-    let ghosts = [];
-
     const walletModal = document.getElementById('walletModal');
-    const walletAddressInput = document.getElementById('walletAddress');
     const connectWalletButton = document.getElementById('connectWallet');
+    const walletInput = document.getElementById('walletInput');
+    const rewardDisplay = document.getElementById('rewardDisplay');
+    const rewardImage = document.getElementById('rewardImage');
+
+    const lootBoxes = [
+        document.getElementById('lootBox1'),
+        document.getElementById('lootBox2'),
+        document.getElementById('lootBox3')
+    ];
 
     connectWalletButton.addEventListener('click', () => {
-        const walletAddress = walletAddressInput.value.trim();
+        const walletAddress = walletInput.value;
         if (!walletAddress) {
-            alert('Please enter a valid Solana wallet address.');
+            alert('Please enter your wallet address.');
             return;
         }
         walletModal.style.display = 'none';
-        initGame();
+        alert('Wallet connected! Ready to play.');
     });
 
-    function initGame() {
-        // Generate coins
-        for (let i = 0; i < 5; i++) {
-            coins.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: 10,
-                color: 'gold'
-            });
-        }
+    lootBoxes.forEach((box, index) => {
+        box.addEventListener('click', () => {
+            const rewards = [
+                'https://via.placeholder.com/150/GoldNFT',
+                'https://via.placeholder.com/150/SilverNFT',
+                'https://via.placeholder.com/150/BronzeNFT'
+            ];
+            rewardImage.src = rewards[index];
+            rewardDisplay.style.display = 'block';
 
-        // Generate ghosts
-        for (let i = 0; i < 3; i++) {
-            ghosts.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: 20,
-                color: 'red',
-                dx: Math.random() < 0.5 ? 2 : -2,
-                dy: Math.random() < 0.5 ? 2 : -2
-            });
-        }
-
-        requestAnimationFrame(updateGame);
-    }
-
-    function drawPlayer() {
-        ctx.fillStyle = player.color;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    function drawCoins() {
-        coins.forEach(coin => {
-            ctx.fillStyle = coin.color;
-            ctx.beginPath();
-            ctx.arc(coin.x, coin.y, coin.size, 0, Math.PI * 2);
-            ctx.fill();
+            setTimeout(() => {
+                rewardDisplay.style.display = 'none';
+            }, 3000);
         });
-    }
-
-    function drawGhosts() {
-        ghosts.forEach(ghost => {
-            ctx.fillStyle = ghost.color;
-            ctx.beginPath();
-            ctx.arc(ghost.x, ghost.y, ghost.size, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
-
-    function updatePlayer() {
-        player.x += player.dx;
-        player.y += player.dy;
-
-        // Keep player within bounds
-        if (player.x - player.size < 0) player.x = player.size;
-        if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
-        if (player.y - player.size < 0) player.y = player.size;
-        if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
-    }
-
-    function updateGhosts() {
-        ghosts.forEach(ghost => {
-            ghost.x += ghost.dx;
-            ghost.y += ghost.dy;
-
-            // Bounce off walls
-            if (ghost.x - ghost.size < 0 || ghost.x + ghost.size > canvas.width) ghost.dx *= -1;
-            if (ghost.y - ghost.size < 0 || ghost.y + ghost.size > canvas.height) ghost.dy *= -1;
-        });
-    }
-
-    function detectCollisions() {
-        coins = coins.filter(coin => {
-            const dist = Math.hypot(player.x - coin.x, player.y - coin.y);
-            if (dist < player.size + coin.size) {
-                score++;
-                document.getElementById('score').innerText = `Score: ${score}`;
-                showPopup('+1 Coin!');
-                return false;
-            }
-            return true;
-        });
-
-        ghosts.forEach(ghost => {
-            const dist = Math.hypot(player.x - ghost.x, player.y - ghost.y);
-            if (dist < player.size + ghost.size) {
-                alert(`Game Over! Final Score: ${score}`);
-                window.location.reload();
-            }
-        });
-    }
-
-    function showPopup(message) {
-        const popup = document.createElement('div');
-        popup.className = 'popup';
-        popup.textContent = message;
-        document.body.appendChild(popup);
-
-        setTimeout(() => popup.remove(), 5000);
-    }
-
-    function updateGame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        updatePlayer();
-        updateGhosts();
-        detectCollisions();
-
-        drawPlayer();
-        drawCoins();
-        drawGhosts();
-
-        requestAnimationFrame(updateGame);
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') player.dy = -3;
-        if (e.key === 'ArrowDown') player.dy = 3;
-        if (e.key === 'ArrowLeft') player.dx = -3;
-        if (e.key === 'ArrowRight') player.dx = 3;
-    });
-
-    document.addEventListener('keyup', () => {
-        player.dx = 0;
-        player.dy = 0;
     });
 </script>
-
 </body>
 </html>
